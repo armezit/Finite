@@ -17,7 +17,7 @@ interface FactoryInterface
      * @param object $object
      * @param string $graph
      *
-     * @return StateMachineInterface
+     * @return \Finite\StateMachine\StateMachineInterface
      */
-    public function get($object, $graph = 'default');
+    public function get($object, $graph = 'default'): StateMachineInterface;
 }

@@ -14,7 +14,7 @@ interface PropertiesAwareInterface
      *
      * @return bool
      */
-    public function has($property);
+    public function has($property): bool;
 
     /**
      * @param string $property
@@ -29,5 +29,5 @@ interface PropertiesAwareInterface
      *
      * @return array
      */
-    public function getProperties();
+    public function getProperties(): array;
 }

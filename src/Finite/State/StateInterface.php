@@ -11,46 +11,45 @@ use Finite\PropertiesAwareInterface;
  */
 interface StateInterface extends PropertiesAwareInterface
 {
-    const
+    public const
         TYPE_INITIAL = 'initial',
         TYPE_NORMAL = 'normal',
-        TYPE_FINAL = 'final'
-    ;
+        TYPE_FINAL = 'final';
 
     /**
      * Returns the state name.
      *
      * @return string
      */
-    public function getName();
+    public function getName(): string;
 
     /**
      * Returns if this state is the initial state.
      *
      * @return bool
      */
-    public function isInitial();
+    public function isInitial(): bool;
 
     /**
      * Returns if this state is the final state.
      *
-     * @return mixed
+     * @return bool
      */
-    public function isFinal();
+    public function isFinal(): bool;
 
     /**
      * Returns if this state is a normal state (!($this->isInitial() || $this->isFinal()).
      *
-     * @return mixed
+     * @return bool
      */
-    public function isNormal();
+    public function isNormal(): bool;
 
     /**
      * Returns the state type.
      *
      * @return string
      */
-    public function getType();
+    public function getType(): string;
 
     /**
      * Returns the available transitions.

@@ -2,7 +2,8 @@
 
 namespace Finite\Factory;
 
-use Pimple;
+use Finite\StateMachine\StateMachineInterface;
+use Pimple\Container;
 
 /**
  * A concrete implementation of State Machine Factory using Pimple.
@@ -12,7 +13,7 @@ use Pimple;
 class PimpleFactory extends AbstractFactory
 {
     /**
-     * @var Pimple
+     * @var \Pimple\Container
      */
     protected $container;
 
@@ -22,19 +23,24 @@ class PimpleFactory extends AbstractFactory
     protected $id;
 
     /**
-     * @param Pimple $container
-     * @param string $id
+     * @param \Pimple\Container $container
+     * @param string            $id
      */
-    public function __construct(Pimple $container, $id)
+    public function __construct(Container $container, $id)
     {
         $this->container = $container;
         $this->id = $id;
+
+        // this needed to bypass pimple service caching
+        $container->factory(
+            $container->raw($id)
+        );
     }
 
     /**
      * {@inheritdoc}
      */
-    protected function createStateMachine()
+    protected function createStateMachine(): StateMachineInterface
     {
         return $this->container[$this->id];
     }

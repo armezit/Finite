@@ -15,19 +15,19 @@ abstract class AbstractFactory implements FactoryInterface
     /**
      * @var StateMachineInterface[]
      */
-    protected $stateMachines = array();
+    protected $stateMachines = [];
 
     /**
      * @var LoaderInterface[]
      */
-    protected $loaders = array();
+    protected $loaders = [];
 
     /**
      * {@inheritdoc}
      */
-    public function get($object, $graph = 'default')
+    public function get($object, $graph = 'default'): StateMachineInterface
     {
-        $hash = spl_object_hash($object).'.'.$graph;
+        $hash = spl_object_hash($object) . '.' . $graph;
         if (!isset($this->stateMachines[$hash])) {
             $stateMachine = $this->createStateMachine();
             if (null !== ($loader = $this->getLoader($object, $graph))) {
@@ -43,9 +43,9 @@ abstract class AbstractFactory implements FactoryInterface
     }
 
     /**
-     * @param LoaderInterface $loader
+     * @param \Finite\Loader\LoaderInterface $loader
      */
-    public function addLoader(LoaderInterface $loader)
+    public function addLoader(LoaderInterface $loader): void
     {
         $this->loaders[] = $loader;
     }
@@ -54,9 +54,9 @@ abstract class AbstractFactory implements FactoryInterface
      * @param object $object
      * @param string $graph
      *
-     * @return LoaderInterface|null
+     * @return \Finite\Loader\LoaderInterface|null
      */
-    protected function getLoader($object, $graph)
+    protected function getLoader($object, $graph): ?LoaderInterface
     {
         foreach ($this->loaders as $loader) {
             if ($loader->supports($object, $graph)) {
@@ -64,13 +64,13 @@ abstract class AbstractFactory implements FactoryInterface
             }
         }
 
-        return;
+        return null;
     }
 
     /**
      * Creates an instance of StateMachine.
      *
-     * @return StateMachineInterface
+     * @return \Finite\StateMachine\StateMachineInterface
      */
-    abstract protected function createStateMachine();
+    abstract protected function createStateMachine(): StateMachineInterface;
 }

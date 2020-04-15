@@ -16,11 +16,11 @@ interface StateAccessorInterface
      *
      * @param object $object
      *
-     * @throws NoSuchPropertyException
+     * @return string|null
+     * @throws \Finite\Exception\NoSuchPropertyException
      *
-     * @return string
      */
-    public function getState($object);
+    public function getState($object): ?string;
 
     /**
      * Set the state of the object to the given property path.
@@ -30,5 +30,5 @@ interface StateAccessorInterface
      *
      * @throws NoSuchPropertyException
      */
-    public function setState(&$object, $value);
+    public function setState(&$object, $value): void;
 }

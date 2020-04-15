@@ -3,13 +3,15 @@
 namespace Finite\Extension\Twig;
 
 use Finite\Context;
+use Twig\Extension\AbstractExtension;
+use Twig\TwigFunction;
 
 /**
  * The Finite Twig extension.
  *
  * @author Yohan Giarelli <yohan@frequence-web.fr>
  */
-class FiniteExtension extends \Twig_Extension
+class FiniteExtension extends AbstractExtension
 {
     /**
      * @var Context
@@ -29,13 +31,13 @@ class FiniteExtension extends \Twig_Extension
      */
     public function getFunctions()
     {
-        return array(
-            new \Twig_SimpleFunction('finite_state', array($this, 'getFiniteState')),
-            new \Twig_SimpleFunction('finite_transitions', array($this, 'getFiniteTransitions')),
-            new \Twig_SimpleFunction('finite_properties', array($this, 'getFiniteProperties')),
-            new \Twig_SimpleFunction('finite_has', array($this, 'hasFiniteProperty')),
-            new \Twig_SimpleFunction('finite_can', array($this, 'canFiniteTransition')),
-        );
+        return [
+            new TwigFunction('finite_state', [$this, 'getFiniteState']),
+            new TwigFunction('finite_transitions', [$this, 'getFiniteTransitions']),
+            new TwigFunction('finite_properties', [$this, 'getFiniteProperties']),
+            new TwigFunction('finite_has', [$this, 'hasFiniteProperty']),
+            new TwigFunction('finite_can', [$this, 'canFiniteTransition']),
+        ];
     }
 
     /**

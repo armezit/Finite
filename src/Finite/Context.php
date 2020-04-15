@@ -3,7 +3,6 @@
 namespace Finite;
 
 use Finite\Factory\FactoryInterface;
-use Finite\StateMachine\StateMachine;
 
 /**
  * The Finite context.
@@ -32,7 +31,7 @@ class Context
      *
      * @return string
      */
-    public function getState($object, $graph = 'default')
+    public function getState($object, $graph = 'default'): string
     {
         return $this->getStateMachine($object, $graph)->getCurrentState()->getName();
     }
@@ -44,7 +43,7 @@ class Context
      *
      * @return array<string>
      */
-    public function getTransitions($object, $graph = 'default', $asObject = false)
+    public function getTransitions($object, $graph = 'default', $asObject = false): array
     {
         if (!$asObject) {
             return $this->getStateMachine($object, $graph)->getCurrentState()->getTransitions();
@@ -53,7 +52,7 @@ class Context
         $stateMachine = $this->getStateMachine($object, $graph);
 
         return array_map(
-            function ($transition) use ($stateMachine) {
+            static function ($transition) use ($stateMachine) {
                 return $stateMachine->getTransition($transition);
             },
             $stateMachine->getCurrentState()->getTransitions()
@@ -66,7 +65,7 @@ class Context
      *
      * @return array<string>
      */
-    public function getProperties($object, $graph = 'default')
+    public function getProperties($object, $graph = 'default'): array
     {
         return $this->getStateMachine($object, $graph)->getCurrentState()->getProperties();
     }
@@ -78,7 +77,7 @@ class Context
      *
      * @return bool
      */
-    public function hasProperty($object, $property, $graph = 'default')
+    public function hasProperty($object, $property, $graph = 'default'): bool
     {
         return $this->getStateMachine($object, $graph)->getCurrentState()->has($property);
     }
@@ -87,9 +86,9 @@ class Context
      * @param object $object
      * @param string $graph
      *
-     * @return StateMachine
+     * @return \Finite\StateMachine\StateMachineInterface
      */
-    public function getStateMachine($object, $graph = 'default')
+    public function getStateMachine($object, $graph = 'default'): StateMachine\StateMachineInterface
     {
         return $this->getFactory()->get($object, $graph);
     }
@@ -97,7 +96,7 @@ class Context
     /**
      * @return FactoryInterface
      */
-    public function getFactory()
+    public function getFactory(): FactoryInterface
     {
         return $this->factory;
     }

@@ -23,15 +23,16 @@ class SecurityAwareStateMachine extends StateMachine
     /**
      * @param AuthorizationCheckerInterface $authorizationChecker
      */
-    public function setSecurityContext(AuthorizationCheckerInterface $authorizationChecker)
+    public function setSecurityContext(AuthorizationCheckerInterface $authorizationChecker): void
     {
         $this->authorizationChecker = $authorizationChecker;
     }
 
     /**
      * {@inheritdoc}
+     * @throws \Finite\Exception\TransitionException
      */
-    public function can($transition, array $parameters = array())
+    public function can($transition, array $parameters = []): bool
     {
         $transition = $transition instanceof TransitionInterface ? $transition : $this->getTransition($transition);
 

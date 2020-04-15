@@ -1,5 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
+use Finite\Exception\StateException;
+use Finite\Exception\TransitionException;
+
 require_once __DIR__ . '/../vendor/autoload.php';
 
 // Implement your document class
@@ -7,46 +12,61 @@ class Document implements Finite\StatefulInterface
 {
     private $state;
 
-    public function getFiniteState()
+    public function getFiniteState(): string
     {
-        return $this->state;
+        return (string)$this->state;
     }
 
-    public function setFiniteState($state)
+    public function setFiniteState($state): void
     {
         $this->state = $state;
     }
 }
 
 // Configure your graph
-$document     = new Document;
+$document = new Document();
 $stateMachine = new Finite\StateMachine\StateMachine($document);
-$loader       = new Finite\Loader\ArrayLoader(array(
-    'class'  => 'Document',
-    'states'  => array(
-        'draft' => array(
-            'type'       => Finite\State\StateInterface::TYPE_INITIAL,
-            'properties' => array('deletable' => true, 'editable' => true),
-        ),
-        'proposed' => array(
-            'type'       => Finite\State\StateInterface::TYPE_NORMAL,
-            'properties' => array(),
-        ),
-        'accepted' => array(
-            'type'       => Finite\State\StateInterface::TYPE_FINAL,
-            'properties' => array('printable' => true),
-        )
-    ),
-    'transitions' => array(
-        'propose' => array('from' => array('draft'), 'to' => 'proposed'),
-        'accept'  => array('from' => array('proposed'), 'to' => 'accepted'),
-        'reject'  => array('from' => array('proposed'), 'to' => 'draft'),
-    ),
-));
+$loader = new Finite\Loader\ArrayLoader(
+    [
+        'class' => Document::class,
+        'states' => [
+            'draft' => [
+                'type' => Finite\State\StateInterface::TYPE_INITIAL,
+                'properties' => [
+                    'deletable' => true,
+                    'editable' => true,
+                ],
+            ],
+            'proposed' => [
+                'type' => Finite\State\StateInterface::TYPE_NORMAL,
+                'properties' => [],
+            ],
+            'accepted' => [
+                'type' => Finite\State\StateInterface::TYPE_FINAL,
+                'properties' => [
+                    'printable' => true,
+                ],
+            ],
+        ],
+        'transitions' => [
+            'propose' => [
+                'from' => ['draft'],
+                'to' => 'proposed',
+            ],
+            'accept' => [
+                'from' => ['proposed'],
+                'to' => 'accepted',
+            ],
+            'reject' => [
+                'from' => ['proposed'],
+                'to' => 'draft',
+            ],
+        ],
+    ]
+);
 
 $loader->load($stateMachine);
 $stateMachine->initialize();
-
 
 // Working with workflow
 
@@ -64,7 +84,7 @@ var_dump($stateMachine->can('accept'));
 // Apply transitions
 try {
     $stateMachine->apply('accept');
-} catch (\Finite\Exception\StateException $e) {
+} catch (StateException|TransitionException $e) {
     echo $e->getMessage(), "\n";
 }
 

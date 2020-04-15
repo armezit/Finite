@@ -5,6 +5,7 @@ namespace Finite\StateMachine;
 use Finite\State\Accessor\StateAccessorInterface;
 use Finite\State\StateInterface;
 use Finite\Transition\TransitionInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * The Finite State Machine base Interface.
@@ -26,7 +27,7 @@ interface StateMachineInterface
      *
      * @return mixed
      */
-    public function apply($transitionName, array $parameters = array());
+    public function apply($transitionName, array $parameters = []);
 
     /**
      * Returns if the transition is applicable.
@@ -36,7 +37,7 @@ interface StateMachineInterface
      *
      * @return bool
      */
-    public function can($transition, array $parameters = array());
+    public function can($transition, array $parameters = []): bool;
 
     /**
      * @param string|StateInterface $state
@@ -61,7 +62,7 @@ interface StateMachineInterface
      *
      * @throws \Finite\Exception\TransitionException
      */
-    public function getTransition($name);
+    public function getTransition($name): TransitionInterface;
 
     /**
      * @param string $name
@@ -70,21 +71,21 @@ interface StateMachineInterface
      *
      * @throws \Finite\Exception\TransitionException
      */
-    public function getState($name);
+    public function getState($name): StateInterface;
 
     /**
      * Returns an array containing all the transitions names.
      *
      * @return array<string>
      */
-    public function getTransitions();
+    public function getTransitions(): array;
 
     /**
      * Returns an array containing all the states names.
      *
      * @return array<string>
      */
-    public function getStates();
+    public function getStates(): array;
 
     /**
      * @param object $object
@@ -99,12 +100,12 @@ interface StateMachineInterface
     /**
      * @return StateInterface
      */
-    public function getCurrentState();
+    public function getCurrentState(): StateInterface;
 
     /**
      * @return \Symfony\Component\EventDispatcher\EventDispatcherInterface
      */
-    public function getDispatcher();
+    public function getDispatcher(): EventDispatcherInterface;
 
     /**
      * @param StateAccessorInterface $stateAccessor
@@ -114,7 +115,7 @@ interface StateMachineInterface
     /**
      * @return bool
      */
-    public function hasStateAccessor();
+    public function hasStateAccessor(): bool;
 
     /**
      * @param string $graph
@@ -122,9 +123,9 @@ interface StateMachineInterface
     public function setGraph($graph);
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getGraph();
+    public function getGraph(): ?string;
 
     /**
      * Find a state which have a given property, with an optional given value.
@@ -133,7 +134,7 @@ interface StateMachineInterface
      * @param string $property
      * @param mixed  $value
      *
-     * @return bool
+     * @return array
      */
-    public function findStateWithProperty($property, $value = null);
+    public function findStateWithProperty($property, $value = null): array;
 }

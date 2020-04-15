@@ -16,7 +16,11 @@ use Finite\Transition\TransitionInterface;
  */
 class StateMachineTest extends StateMachineTestCase
 {
-    public function testAddState()
+    /**
+     * @throws \Finite\Exception\StateException
+     * @throws \Finite\Exception\TransitionException
+     */
+    public function testAddState(): void
     {
         $this->object->addState('foo');
         $this->assertInstanceOf(StateInterface::class, $this->object->getState('foo'));
@@ -32,7 +36,11 @@ class StateMachineTest extends StateMachineTestCase
         $this->assertInstanceOf(StateInterface::class, $this->object->getState('bar'));
     }
 
-    public function testAddTransition()
+    /**
+     * @throws \Finite\Exception\StateException
+     * @throws \Finite\Exception\TransitionException
+     */
+    public function testAddTransition(): void
     {
         $this->object->addTransition('t12', 'state1', 'state2');
         $this->assertInstanceOf(TransitionInterface::class, $this->object->getTransition('t12'));
@@ -49,22 +57,28 @@ class StateMachineTest extends StateMachineTestCase
         $this->assertInstanceOf(StateInterface::class, $this->object->getState('state3'));
     }
 
-    public function testInitialize()
+    /**
+     * @throws \Finite\Exception\ObjectException
+     */
+    public function testInitialize(): void
     {
         $this->dispatcher
             ->expects($this->once())
             ->method('dispatch')
-            ->with(...['finite.initialize', $this->isInstanceOf(StateMachineEvent::class)])
+            ->with(...[$this->isInstanceOf(StateMachineEvent::class), 'finite.initialize'])
         ;
 
         $this->initialize();
     }
 
-    public function testInitializeWithInitialState()
+    /**
+     * @throws \Finite\Exception\ObjectException
+     */
+    public function testInitializeWithInitialState(): void
     {
         $object = $this->createMock(StatefulInterface::class);
 
-        $this->accessor->expects($this->at(1))->method('setState')->willReturn('s1');
+        $this->accessor->expects($this->at(1))->method('setState');
 
         $this->addStates();
         $this->addTransitions();
@@ -72,27 +86,35 @@ class StateMachineTest extends StateMachineTestCase
         $this->object->initialize();
     }
 
-    public function testGetCurrentState()
+    /**
+     * @throws \Finite\Exception\ObjectException
+     */
+    public function testGetCurrentState(): void
     {
         $this->initialize();
+
         $this->assertInstanceOf(StateInterface::class, $this->object->getCurrentState());
         $this->assertSame('s2', $this->object->getCurrentState()->getName());
     }
 
-    public function testCan()
+    /**
+     * @throws \Finite\Exception\ObjectException
+     */
+    public function testCan(): void
     {
         $this->initialize();
+
         $this->assertTrue($this->object->can('t23'));
         $this->assertFalse($this->object->can('t34'));
     }
 
-    public function testCanWithGuardReturningFalse()
+    public function testCanWithGuardReturningFalse(): void
     {
         $transition = $this->createMock(TransitionInterface::class);
-        $transition->expects($this->any())
+        $transition
             ->method('getGuard')
             ->willReturn(
-                function () {
+                static function () {
                     return false;
                 }
             )
@@ -101,16 +123,20 @@ class StateMachineTest extends StateMachineTestCase
         $transition->expects($this->atLeastOnce())->method('getName')->willReturn('t');
         $transition->expects($this->once())->method('getInitialStates')->willReturn(['state1']);
         $this->object->addTransition($transition);
+
         $this->assertFalse($this->object->can($transition));
     }
 
-    public function testCanWithGuardReturningTrue()
+    /**
+     * @throws \Finite\Exception\ObjectException
+     */
+    public function testCanWithGuardReturningTrue(): void
     {
         $transition = $this->createMock(TransitionInterface::class);
-        $transition->expects($this->any())
+        $transition
             ->method('getGuard')
             ->willReturn(
-                function () {
+                static function () {
                     return true;
                 }
             )
@@ -121,79 +147,97 @@ class StateMachineTest extends StateMachineTestCase
 
         $this->object->setObject($stateful);
         $this->object->initialize();
+
         $transition->expects($this->atLeastOnce())->method('getName')->willReturn('t');
         $transition->expects($this->once())->method('getInitialStates')->willReturn(['state1']);
+
         $this->object->addTransition($transition);
 
         $this->assertTrue($this->object->can($transition));
     }
 
-    public function testApply()
+    /**
+     * @throws \Finite\Exception\ObjectException
+     * @throws \Finite\Exception\StateException
+     */
+    public function testApply(): void
     {
         $this->expectException(StateException::class);
 
         $this->dispatcher
             ->expects($this->at(1))
             ->method('dispatch')
-            ->with(...['finite.test_transition', $this->isInstanceOf(TransitionEvent::class)])
+            ->with(...[$this->isInstanceOf(TransitionEvent::class), 'finite.test_transition'])
         ;
 
         $this->dispatcher
             ->expects($this->at(2))
             ->method('dispatch')
-            ->with(...['finite.test_transition.t23', $this->isInstanceOf(TransitionEvent::class)])
+            ->with(...[$this->isInstanceOf(TransitionEvent::class), 'finite.test_transition.t23'])
         ;
 
         $this->dispatcher
             ->expects($this->at(3))
             ->method('dispatch')
-            ->with(...['finite.pre_transition', $this->isInstanceOf(TransitionEvent::class)])
+            ->with(...[$this->isInstanceOf(TransitionEvent::class), 'finite.pre_transition'])
         ;
 
         $this->dispatcher
             ->expects($this->at(4))
             ->method('dispatch')
-            ->with(...['finite.pre_transition.t23', $this->isInstanceOf(TransitionEvent::class)])
+            ->with(...[$this->isInstanceOf(TransitionEvent::class), 'finite.pre_transition.t23'])
         ;
 
         $this->dispatcher
             ->expects($this->at(5))
             ->method('dispatch')
-            ->with(...['finite.post_transition', $this->isInstanceOf(TransitionEvent::class)])
+            ->with(...[$this->isInstanceOf(TransitionEvent::class), 'finite.post_transition'])
         ;
 
         $this->dispatcher
             ->expects($this->at(6))
             ->method('dispatch')
-            ->with(...['finite.post_transition.t23', $this->isInstanceOf(TransitionEvent::class)])
+            ->with(...[$this->isInstanceOf(TransitionEvent::class), 'finite.post_transition.t23'])
         ;
 
         $this->initialize();
+
         $this->object->apply('t23');
         $this->assertSame('s3', $this->object->getCurrentState()->getName());
+
         $this->object->apply('t23');
     }
 
-    public function testGetStates()
+    /**
+     * @throws \Finite\Exception\ObjectException
+     */
+    public function testGetStates(): void
     {
         $this->initialize();
 
         $this->assertSame(['s1', 's2', 's3', 's4', 's5'], $this->object->getStates());
     }
 
-    public function testGetTransitions()
+    /**
+     * @throws \Finite\Exception\ObjectException
+     */
+    public function testGetTransitions(): void
     {
         $this->initialize();
 
         $this->assertSame(['t12', 't23', 't34', 't45'], $this->object->getTransitions());
     }
 
-    public function testGetStateFromObject()
+    /**
+     * @throws \Finite\Exception\ObjectException
+     * @throws \Finite\Exception\TransitionException
+     */
+    public function testGetStateFromObject(): void
     {
         $this->initialize();
 
         $state = $this->getMockBuilder('stdClass')
-            ->setMethods(['__toString'])
+            ->addMethods(['__toString'])
             ->getMock()
         ;
         $state->expects($this->once())->method('__toString')->willReturn('s1');
@@ -203,79 +247,91 @@ class StateMachineTest extends StateMachineTestCase
 
     /**
      * Test events with a named statemachine
+     *
+     * @throws \Finite\Exception\ObjectException
+     * @throws \Finite\Exception\StateException
      */
-    public function testApplyWithGraph()
+    public function testApplyWithGraph(): void
     {
         $this->dispatcher
             ->expects($this->at(1))
             ->method('dispatch')
-            ->with(...['finite.test_transition', $this->isInstanceOf(TransitionEvent::class)])
+            ->with(...[$this->isInstanceOf(TransitionEvent::class), 'finite.test_transition'])
         ;
 
         $this->dispatcher
             ->expects($this->at(2))
             ->method('dispatch')
-            ->with(...['finite.test_transition.t23', $this->isInstanceOf(TransitionEvent::class)])
+            ->with(...[$this->isInstanceOf(TransitionEvent::class), 'finite.test_transition.t23'])
         ;
 
         $this->dispatcher
             ->expects($this->at(3))
             ->method('dispatch')
-            ->with(...['finite.test_transition.foo.t23', $this->isInstanceOf(TransitionEvent::class)])
+            ->with(...[$this->isInstanceOf(TransitionEvent::class), 'finite.test_transition.foo.t23'])
         ;
 
         $this->dispatcher
             ->expects($this->at(4))
             ->method('dispatch')
-            ->with(...['finite.pre_transition', $this->isInstanceOf(TransitionEvent::class)])
+            ->with(...[$this->isInstanceOf(TransitionEvent::class), 'finite.pre_transition'])
         ;
 
         $this->dispatcher
             ->expects($this->at(5))
             ->method('dispatch')
-            ->with(...['finite.pre_transition.t23', $this->isInstanceOf(TransitionEvent::class)])
+            ->with(...[$this->isInstanceOf(TransitionEvent::class), 'finite.pre_transition.t23'])
         ;
 
         $this->dispatcher
             ->expects($this->at(6))
             ->method('dispatch')
-            ->with(...['finite.pre_transition.foo.t23', $this->isInstanceOf(TransitionEvent::class)])
+            ->with(...[$this->isInstanceOf(TransitionEvent::class), 'finite.pre_transition.foo.t23'])
         ;
 
         $this->dispatcher
             ->expects($this->at(7))
             ->method('dispatch')
-            ->with(...['finite.post_transition', $this->isInstanceOf(TransitionEvent::class)])
+            ->with(...[$this->isInstanceOf(TransitionEvent::class), 'finite.post_transition'])
         ;
 
         $this->dispatcher
             ->expects($this->at(8))
             ->method('dispatch')
-            ->with(...['finite.post_transition.t23', $this->isInstanceOf(TransitionEvent::class)])
+            ->with(...[$this->isInstanceOf(TransitionEvent::class), 'finite.post_transition.t23'])
         ;
 
         $this->dispatcher
             ->expects($this->at(9))
             ->method('dispatch')
-            ->with(...['finite.post_transition.foo.t23', $this->isInstanceOf(TransitionEvent::class)])
+            ->with(...[$this->isInstanceOf(TransitionEvent::class), 'finite.post_transition.foo.t23'])
         ;
 
         $this->object->setGraph('foo');
 
         $this->initialize();
         $this->object->apply('t23');
+
         $this->assertSame('s3', $this->object->getCurrentState()->getName());
     }
 
-    public function testItFindsStatesByPropertyName()
+    /**
+     * @throws \Finite\Exception\ObjectException
+     */
+    public function testItFindsStatesByPropertyName(): void
     {
         $this->initialize();
+
         $this->assertSame(['s2', 's4', 's5'], $this->object->findStateWithProperty('visible'));
     }
 
-    public function testItFindsStatesByPropertyValue()
+    /**
+     * @throws \Finite\Exception\ObjectException
+     */
+    public function testItFindsStatesByPropertyValue(): void
     {
         $this->initialize();
+
         $this->assertSame(['s2', 's4'], $this->object->findStateWithProperty('visible', true));
     }
 }
