@@ -39,7 +39,7 @@ class State implements StateInterface
      */
     protected $properties;
 
-    public function __construct($name, $type = self::TYPE_NORMAL, array $transitions = array(), array $properties = array())
+    public function __construct($name, $type = self::TYPE_NORMAL, array $transitions = [], array $properties = [])
     {
         $this->name = $name;
         $this->type = $type;
@@ -50,7 +50,7 @@ class State implements StateInterface
     /**
      * {@inheritdoc}
      */
-    public function isInitial()
+    public function isInitial(): bool
     {
         return self::TYPE_INITIAL === $this->type;
     }
@@ -58,7 +58,7 @@ class State implements StateInterface
     /**
      * {@inheritdoc}
      */
-    public function isFinal()
+    public function isFinal(): bool
     {
         return self::TYPE_FINAL === $this->type;
     }
@@ -66,7 +66,7 @@ class State implements StateInterface
     /**
      * {@inheritdoc}
      */
-    public function isNormal()
+    public function isNormal(): bool
     {
         return self::TYPE_NORMAL === $this->type;
     }
@@ -74,7 +74,7 @@ class State implements StateInterface
     /**
      * {@inheritdoc}
      */
-    public function getType()
+    public function getType(): string
     {
         return $this->type;
     }
@@ -82,7 +82,7 @@ class State implements StateInterface
     /**
      * @param $transition
      */
-    public function addTransition($transition)
+    public function addTransition($transition): void
     {
         if ($transition instanceof TransitionInterface) {
             $transition = $transition->getName();
@@ -94,7 +94,7 @@ class State implements StateInterface
     /**
      * @param array $transitions
      */
-    public function setTransitions(array $transitions)
+    public function setTransitions(array $transitions): void
     {
         foreach ($transitions as $transition) {
             $this->addTransition($transition);
@@ -104,7 +104,7 @@ class State implements StateInterface
     /**
      * {@inheritdoc}
      */
-    public function getTransitions()
+    public function getTransitions(): array
     {
         return $this->transitions;
     }
@@ -114,19 +114,19 @@ class State implements StateInterface
      *
      * @deprecated Deprecated since version 1.0.0-BETA2. Use {@link StateMachine::can($transition)} instead.
      */
-    public function can($transition)
+    public function can($transition): bool
     {
         if ($transition instanceof TransitionInterface) {
             $transition = $transition->getName();
         }
 
-        return in_array($transition, $this->transitions);
+        return in_array($transition, $this->transitions, true);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function has($property)
+    public function has($property): bool
     {
         return array_key_exists($property, $this->properties);
     }
@@ -142,7 +142,7 @@ class State implements StateInterface
     /**
      * {@inheritdoc}
      */
-    public function getProperties()
+    public function getProperties(): array
     {
         return $this->properties;
     }
@@ -150,7 +150,7 @@ class State implements StateInterface
     /**
      * {@inheritdoc}
      */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
@@ -158,7 +158,7 @@ class State implements StateInterface
     /**
      * @param array $properties
      */
-    public function setProperties(array $properties)
+    public function setProperties(array $properties): void
     {
         $this->properties = $properties;
     }

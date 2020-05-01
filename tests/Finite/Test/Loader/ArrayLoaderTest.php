@@ -2,14 +2,19 @@
 
 namespace Finite\Test\Loader;
 
+use Finite\Event\Callback\Callback;
+use Finite\Event\CallbackHandler;
 use Finite\Loader\ArrayLoader;
+use Finite\State\Accessor\PropertyPathStateAccessor;
+use Finite\StatefulInterface;
 use Finite\StateMachine\StateMachine;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
  * @author Yohan Giarelli <yohan@frequence-web.fr>
  */
-class ArrayLoaderTest extends \PHPUnit_Framework_TestCase
+class ArrayLoaderTest extends TestCase
 {
     /**
      * @var ArrayLoader
@@ -17,42 +22,43 @@ class ArrayLoaderTest extends \PHPUnit_Framework_TestCase
     protected $object;
 
     /**
-     * @var \PHPUnit_Framework_MockObject_MockObject
+     * @var \PHPUnit\Framework\MockObject\MockObject
      */
     protected $callbackHandler;
 
-    protected function setUp()
+    protected function setUp(): void
     {
-        $this->callbackHandler = $this->getMockBuilder('Finite\Event\CallbackHandler')
+        $this->callbackHandler = $this->getMockBuilder(CallbackHandler::class)
             ->disableOriginalConstructor()
-            ->getMock();
+            ->getMock()
+        ;
 
         $this->object = new ArrayLoader(
-            array(
-                'class'         => 'Stateful1',
-                'states'        => array(
-                    'start'  => array('type' => 'initial', 'properties' => array('foo' => true, 'bar' => false)),
-                    'middle' => array('type' => 'normal', 'properties' => array()),
-                    'end'    => array('type' => 'final', 'properties' => array()),
-                ),
-                'transitions'   => array(
-                    'middleize' => array(
-                        'from' => array('start'),
-                        'to'   => 'middle'
-                    ),
-                    'finish'    => array(
-                        'from' => array('middle'),
-                        'to'   => 'end'
-                    )
-                )
-            ),
+            [
+                'class' => 'Stateful1',
+                'states' => [
+                    'start' => ['type' => 'initial', 'properties' => ['foo' => true, 'bar' => false]],
+                    'middle' => ['type' => 'normal', 'properties' => []],
+                    'end' => ['type' => 'final', 'properties' => []],
+                ],
+                'transitions' => [
+                    'middleize' => [
+                        'from' => ['start'],
+                        'to' => 'middle',
+                    ],
+                    'finish' => [
+                        'from' => ['middle'],
+                        'to' => 'end',
+                    ],
+                ],
+            ],
             $this->callbackHandler
         );
     }
 
-    public function testLoad()
+    public function testLoad(): void
     {
-        $sm = $this->getMock('Finite\StateMachine\StateMachine');
+        $sm = $this->createMock(StateMachine::class);
         $sm->expects($this->once())->method('setStateAccessor');
         $sm->expects($this->once())->method('setGraph');
         $sm->expects($this->exactly(3))->method('addState');
@@ -60,41 +66,41 @@ class ArrayLoaderTest extends \PHPUnit_Framework_TestCase
         $this->object->load($sm);
     }
 
-    public function testLoadGraph()
+    public function testLoadGraph(): void
     {
-        $sm = $this->getMock('Finite\StateMachine\StateMachine');
+        $sm = $this->createMock(StateMachine::class);
 
         $graphName = 'foobar';
-        $loader = new ArrayLoader(array('class' => 'Stateful1', 'graph' => $graphName), $this->callbackHandler);
+        $loader = new ArrayLoader(['class' => 'Stateful1', 'graph' => $graphName], $this->callbackHandler);
 
-        $sm->expects($this->once())->method('setGraph')->with($graphName);
+        $sm->expects($this->once())->method('setGraph')->with(...[$graphName]);
 
         $loader->load($sm);
     }
 
-    public function testLoadWithMissingOptions()
+    public function testLoadWithMissingOptions(): void
     {
-        $sm = $this->getMock('Finite\StateMachine\StateMachine');
+        $sm = $this->createMock(StateMachine::class);
 
         $this->object = new ArrayLoader(
-            array(
-                'class'       => 'Stateful1',
-                'states'      => array(
-                    'start'  => array('type' => 'initial', 'properties' => array('foo' => true, 'bar' => false)),
-                    'middle' => array(),
-                    'end'    => array('type' => 'final'),
-                ),
-                'transitions' => array(
-                    'middleize' => array(
+            [
+                'class' => 'Stateful1',
+                'states' => [
+                    'start' => ['type' => 'initial', 'properties' => ['foo' => true, 'bar' => false]],
+                    'middle' => [],
+                    'end' => ['type' => 'final'],
+                ],
+                'transitions' => [
+                    'middleize' => [
                         'from' => 'start',
-                        'to'   => 'middle'
-                    ),
-                    'finish'    => array(
-                        'from' => array('middle'),
-                        'to'   => 'end'
-                    )
-                ),
-            ),
+                        'to' => 'middle',
+                    ],
+                    'finish' => [
+                        'from' => ['middle'],
+                        'to' => 'end',
+                    ],
+                ],
+            ],
             $this->callbackHandler
         );
 
@@ -103,105 +109,129 @@ class ArrayLoaderTest extends \PHPUnit_Framework_TestCase
         $this->object->load($sm);
     }
 
-    public function testLoadCallbacks()
+    public function testLoadCallbacks(): void
     {
-        $sm                         = $this->getMock('Finite\StateMachine\StateMachine');
-        $allTimes                   = function () {};
-        $beforeMiddleize            = function () {};
-        $fromStartToOtherThanMiddle = function () {};
+        $sm = $this->createMock(StateMachine::class);
+        $allTimes = static function () {
+        };
+        $beforeMiddleize = static function () {
+        };
+        $fromStartToOtherThanMiddle = static function () {
+        };
 
         $this->object = new ArrayLoader(
-            array(
-                'class'       => 'Stateful1',
-                'states'      => array(
-                    'start'  => array('type' => 'initial'),
-                    'middle' => array(),
-                    'end'    => array('type' => 'final'),
-                ),
-                'transitions' => array(
-                    'middleize' => array('from' => 'start', 'to' => 'middle'),
-                    'finish'    => array('from' => array('middle'), 'to' => 'end')
-                ),
-                'callbacks'   => array(
-                    'before' => array(
-                        array('on' => 'middleize', 'do' => $beforeMiddleize),
-                        array('from' => 'start', 'to' => '-middle', 'do' => $fromStartToOtherThanMiddle)
-                    ),
-                    'after'  => array(
-                        array('do' => $allTimes)
-                    )
-                )
-            ),
+            [
+                'class' => 'Stateful1',
+                'states' => [
+                    'start' => ['type' => 'initial'],
+                    'middle' => [],
+                    'end' => ['type' => 'final'],
+                ],
+                'transitions' => [
+                    'middleize' => ['from' => 'start', 'to' => 'middle'],
+                    'finish' => ['from' => ['middle'], 'to' => 'end'],
+                ],
+                'callbacks' => [
+                    'before' => [
+                        ['on' => 'middleize', 'do' => $beforeMiddleize],
+                        ['from' => 'start', 'to' => '-middle', 'do' => $fromStartToOtherThanMiddle],
+                    ],
+                    'after' => [
+                        ['do' => $allTimes],
+                    ],
+                ],
+            ],
             $this->callbackHandler
         );
 
         $this->callbackHandler
             ->expects($this->at(0))
             ->method('addBefore')
-            ->with($this->isInstanceOf('Finite\Event\Callback\Callback'));
+            ->with(...[$this->isInstanceOf(Callback::class)])
+        ;
 
         $this->callbackHandler
             ->expects($this->at(1))
             ->method('addBefore')
-            ->with($this->isInstanceOf('Finite\Event\Callback\Callback'));
+            ->with(...[$this->isInstanceOf(Callback::class)])
+        ;
 
         $this->callbackHandler
             ->expects($this->at(2))
             ->method('addAfter')
-            ->with($this->isInstanceOf('Finite\Event\Callback\Callback'));
+            ->with(...[$this->isInstanceOf(Callback::class)])
+        ;
 
         $this->object->load($sm);
     }
 
-    public function testLoadWithProperties()
+    public function testLoadWithProperties(): void
     {
         $sm = new StateMachine();
 
         $this->object = new ArrayLoader(
-            array(
-                'class'       => 'Stateful1',
-                'states'      => array(
-                    'start'  => array('type' => 'initial', 'properties' => array('foo' => true, 'bar' => false)),
-                    'end'    => array('type' => 'final'),
-                ),
-                'transitions' => array(
-                    'finish'    => array(
-                        'from' => array('middle'),
-                        'to'   => 'end',
-                        'properties' => array('default' => 'default'),
-                        'configure_properties' => function (OptionsResolver $optionsResolver) {
+            [
+                'class' => 'Stateful1',
+                'states' => [
+                    'start' => ['type' => 'initial', 'properties' => ['foo' => true, 'bar' => false]],
+                    'end' => ['type' => 'final'],
+                ],
+                'transitions' => [
+                    'finish' => [
+                        'from' => ['middle'],
+                        'to' => 'end',
+                        'properties' => ['default' => 'default'],
+                        'configure_properties' => static function (OptionsResolver $optionsResolver) {
                             $optionsResolver->setRequired('required');
                         },
-                    )
-                ),
-            ),
+                    ],
+                ],
+            ],
             $this->callbackHandler
         );
 
         $this->object->load($sm);
+
+        $this->assertCount(1, $sm->getTransitions());
+        $this->assertCount(3, $sm->getStates());
     }
 
-    public function testLoadWithCustomStateAccessor()
+    /**
+     * @covers \Finite\StateMachine\StateMachine::getStateAccessor
+     */
+    public function testLoadWithCustomStateAccessor(): void
     {
-        $sa = $this->getMock('Finite\State\Accessor\PropertyPathStateAccessor', array(), array(), 'CustomAccessor');
+        $sa = $this->getMockBuilder(PropertyPathStateAccessor::class)
+            ->setMockClassName('CustomAccessor')
+            ->getMock()
+        ;
 
         $sm = new StateMachine;
         $sm->setStateAccessor($sa);
 
         $this->object->load($sm);
 
-        $this->assertAttributeInstanceOf('CustomAccessor', 'stateAccessor', $sm);
+        $this->assertInstanceOf('CustomAccessor', $sm->getStateAccessor());
     }
 
-    public function testSupports()
+    /**
+     * @throws \ReflectionException
+     */
+    public function testSupports(): void
     {
-        $object  = $this->getMock('Finite\StatefulInterface', array(), array(), 'Stateful1');
-        $object2 = $this->getMock('Finite\StatefulInterface', array(), array(), 'Stateful2');
+        $object = $this->getMockBuilder(StatefulInterface::class)
+            ->setMockClassName('Stateful1')
+            ->getMock()
+        ;
+        $object2 = $this->getMockBuilder(StatefulInterface::class)
+            ->setMockClassName('Stateful2')
+            ->getMock()
+        ;
 
         $this->assertTrue($this->object->supports($object));
         $this->assertFalse($this->object->supports($object2));
 
-        $alternativeLoader = new ArrayLoader(array('class' => 'Stateful1', 'graph' => 'foobar'));
+        $alternativeLoader = new ArrayLoader(['class' => 'Stateful1', 'graph' => 'foobar']);
         $this->assertTrue($alternativeLoader->supports($object, 'foobar'));
         $this->assertFalse($alternativeLoader->supports($object));
     }

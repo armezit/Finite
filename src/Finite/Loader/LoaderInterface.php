@@ -14,9 +14,9 @@ interface LoaderInterface
     /**
      * Loads a state machine.
      *
-     * @param StateMachineInterface $stateMachine
+     * @param \Finite\StateMachine\StateMachineInterface $stateMachine
      */
-    public function load(StateMachineInterface $stateMachine);
+    public function load(StateMachineInterface $stateMachine): void;
 
     /**
      * Returns if this loader supports $object for $graph.
@@ -26,5 +26,5 @@ interface LoaderInterface
      *
      * @return bool
      */
-    public function supports($object, $graph = 'default');
+    public function supports($object, $graph = 'default'): bool;
 }

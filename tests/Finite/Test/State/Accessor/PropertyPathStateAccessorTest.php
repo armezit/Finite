@@ -3,30 +3,37 @@
 namespace Finite\Test\State\Accessor;
 
 use Finite\State\Accessor\PropertyPathStateAccessor;
+use Finite\StatefulInterface;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\PropertyAccess\Exception\NoSuchPropertyException;
+use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
-class PropertyPathStateAccessorTest extends \PHPUnit_Framework_TestCase
+class PropertyPathStateAccessorTest extends TestCase
 {
     /**
-     * @var \PHPUnit_Framework_MockObject_MockObject
+     * @var \PHPUnit\Framework\MockObject\MockObject
      */
     protected $propertyAccessor;
 
-    protected function setUp()
+    protected function setUp(): void
     {
-        $this->propertyAccessor = $this->getMock('Symfony\Component\PropertyAccess\PropertyAccessorInterface');
+        $this->propertyAccessor = $this->createMock(PropertyAccessorInterface::class);
     }
 
-    public function testGetState()
+    /**
+     * @throws \Finite\Exception\NoSuchPropertyException
+     */
+    public function testGetState(): void
     {
-        $object   = new PropertyPathStateAccessor('bar', $this->propertyAccessor);
-        $stateful = $this->getMock('Finite\StatefulInterface');
+        $object = new PropertyPathStateAccessor('bar', $this->propertyAccessor);
+        $stateful = $this->createMock(StatefulInterface::class);
 
         $this->propertyAccessor
             ->expects($this->at(0))
             ->method('getValue')
-            ->with($stateful, 'bar')
-            ->will($this->returnValue('foo'));
+            ->with(...[$stateful, 'bar'])
+            ->willReturn('foo')
+        ;
 
         $this->assertSame('foo', $object->getState($stateful));
 
@@ -34,22 +41,27 @@ class PropertyPathStateAccessorTest extends \PHPUnit_Framework_TestCase
         $this->propertyAccessor
             ->expects($this->at(0))
             ->method('getValue')
-            ->with($stateful, 'finiteState')
-            ->will($this->returnValue('foo'));
+            ->with(...[$stateful, 'finiteState'])
+            ->willReturn('foo')
+        ;
 
         $this->assertSame('foo', $object->getState($stateful));
     }
 
-    public function testSetState()
+    /**
+     * @throws \Finite\Exception\NoSuchPropertyException
+     */
+    public function testSetState(): void
     {
-        $object   = new PropertyPathStateAccessor('bar', $this->propertyAccessor);
-        $stateful = $this->getMock('Finite\StatefulInterface');
+        $object = new PropertyPathStateAccessor('bar', $this->propertyAccessor);
+        $stateful = $this->createMock(StatefulInterface::class);
 
         $this->propertyAccessor
             ->expects($this->at(0))
             ->method('setValue')
-            ->with($stateful, 'bar', 'foo')
-            ->will($this->returnValue('foo'));
+            ->with(...[$stateful, 'bar', 'foo'])
+            ->willReturn('foo')
+        ;
 
         $object->setState($stateful, 'foo');
 
@@ -57,44 +69,49 @@ class PropertyPathStateAccessorTest extends \PHPUnit_Framework_TestCase
         $this->propertyAccessor
             ->expects($this->at(0))
             ->method('setValue')
-            ->with($stateful, 'finiteState')
-            ->will($this->returnValue('foo'));
+            ->with(...[$stateful, 'finiteState'])
+            ->willReturn('foo')
+        ;
 
         $object->setState($stateful, 'foo');
     }
 
     /**
-     * @expectedException \Finite\Exception\NoSuchPropertyException
+     * @throws \Finite\Exception\NoSuchPropertyException
      */
-    public function testSetOnUnknownProperty()
+    public function testSetOnUnknownProperty(): void
     {
-        $object   = new PropertyPathStateAccessor('bar', $this->propertyAccessor);
-        $stateful = $this->getMock('Finite\StatefulInterface');
+        $this->expectException(\Finite\Exception\NoSuchPropertyException::class);
+
+        $object = new PropertyPathStateAccessor('bar', $this->propertyAccessor);
+        $stateful = $this->createMock(StatefulInterface::class);
 
         $this->propertyAccessor
             ->expects($this->once())
             ->method('setValue')
-            ->with($stateful, 'bar', 'foo')
-            ->will($this->throwException(new NoSuchPropertyException));
-
+            ->with(...[$stateful, 'bar', 'foo'])
+            ->willThrowException(new NoSuchPropertyException)
+        ;
 
         $object->setState($stateful, 'foo');
     }
 
     /**
-     * @expectedException \Finite\Exception\NoSuchPropertyException
+     * @throws \Finite\Exception\NoSuchPropertyException
      */
-    public function testGetOnUnknownProperty()
+    public function testGetOnUnknownProperty(): void
     {
-        $object   = new PropertyPathStateAccessor('bar', $this->propertyAccessor);
-        $stateful = $this->getMock('Finite\StatefulInterface');
+        $this->expectException(\Finite\Exception\NoSuchPropertyException::class);
+
+        $object = new PropertyPathStateAccessor('bar', $this->propertyAccessor);
+        $stateful = $this->createMock(StatefulInterface::class);
 
         $this->propertyAccessor
             ->expects($this->once())
             ->method('getValue')
-            ->with($stateful, 'bar')
-            ->will($this->throwException(new NoSuchPropertyException));
-
+            ->with(...[$stateful, 'bar'])
+            ->willThrowException(new NoSuchPropertyException)
+        ;
 
         $object->getState($stateful);
     }

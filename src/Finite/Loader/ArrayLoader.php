@@ -6,10 +6,11 @@ use Finite\Event\Callback\CallbackBuilderFactory;
 use Finite\Event\Callback\CallbackBuilderFactoryInterface;
 use Finite\Event\CallbackHandler;
 use Finite\State\Accessor\PropertyPathStateAccessor;
-use Finite\StateMachine\StateMachineInterface;
 use Finite\State\State;
 use Finite\State\StateInterface;
+use Finite\StateMachine\StateMachineInterface;
 use Finite\Transition\Transition;
+use ReflectionClass;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -45,13 +46,13 @@ class ArrayLoader implements LoaderInterface
         $this->callbackHandler = $handler;
         $this->callbackBuilderFactory = $callbackBuilderFactory;
         $this->config = array_merge(
-            array(
+            [
                 'class' => '',
                 'graph' => 'default',
                 'property_path' => 'finiteState',
-                'states' => array(),
-                'transitions' => array(),
-            ),
+                'states' => [],
+                'transitions' => [],
+            ],
             $config
         );
     }
@@ -59,7 +60,7 @@ class ArrayLoader implements LoaderInterface
     /**
      * {@inheritdoc}
      */
-    public function load(StateMachineInterface $stateMachine)
+    public function load(StateMachineInterface $stateMachine): void
     {
         if (null === $this->callbackHandler) {
             $this->callbackHandler = new CallbackHandler($stateMachine->getDispatcher());
@@ -82,57 +83,75 @@ class ArrayLoader implements LoaderInterface
 
     /**
      * {@inheritdoc}
+     * @throws \ReflectionException
      */
-    public function supports($object, $graph = 'default')
+    public function supports($object, $graph = 'default'): bool
     {
-        $reflection = new \ReflectionClass($this->config['class']);
+        $reflection = new ReflectionClass($this->config['class']);
 
         return $reflection->isInstance($object) && $graph === $this->config['graph'];
     }
 
     /**
-     * @param StateMachineInterface $stateMachine
+     * @param \Finite\StateMachine\StateMachineInterface $stateMachine
      */
-    private function loadStates(StateMachineInterface $stateMachine)
+    private function loadStates(StateMachineInterface $stateMachine): void
     {
         $resolver = new OptionsResolver();
-        $resolver->setDefaults(array('type' => StateInterface::TYPE_NORMAL, 'properties' => array()));
-        $resolver->setAllowedValues('type', array(
-            StateInterface::TYPE_INITIAL,
-            StateInterface::TYPE_NORMAL,
-            StateInterface::TYPE_FINAL,
-        ));
+        $resolver->setDefaults(['type' => StateInterface::TYPE_NORMAL, 'properties' => []]);
+        $resolver->setAllowedValues(
+            'type',
+            [
+                StateInterface::TYPE_INITIAL,
+                StateInterface::TYPE_NORMAL,
+                StateInterface::TYPE_FINAL,
+            ]
+        );
 
         foreach ($this->config['states'] as $state => $config) {
             $config = $resolver->resolve($config);
-            $stateMachine->addState(new State($state, $config['type'], array(), $config['properties']));
+            $stateMachine->addState(new State($state, $config['type'], [], $config['properties']));
         }
     }
 
     /**
-     * @param StateMachineInterface $stateMachine
+     * @param \Finite\StateMachine\StateMachineInterface $stateMachine
+     * @noinspection PhpUnusedParameterInspection
      */
-    private function loadTransitions(StateMachineInterface $stateMachine)
+    private function loadTransitions(StateMachineInterface $stateMachine): void
     {
         $resolver = new OptionsResolver();
-        $resolver->setRequired(array('from', 'to'));
-        $resolver->setDefaults(array('guard' => null, 'configure_properties' => null, 'properties' => array()));
+        $resolver->setRequired(['from', 'to']);
+        $resolver->setDefaults(['guard' => null, 'configure_properties' => null, 'properties' => []]);
 
-        $resolver->setAllowedTypes('configure_properties', array('null', 'callable'));
+        $resolver->setAllowedTypes('configure_properties', ['null', 'callable']);
 
-        $resolver->setNormalizer('from', function (Options $options, $v) { return (array) $v; });
-        $resolver->setNormalizer('guard', function (Options $options, $v) { return !isset($v) ? null : $v; });
-        $resolver->setNormalizer('configure_properties', function (Options $options, $v) {
-            $resolver = new OptionsResolver();
-
-            $resolver->setDefaults($options['properties']);
-
-            if (is_callable($v)) {
-                $v($resolver);
+        $resolver->setNormalizer(
+            'from',
+            static function (Options $options, $v) {
+                return (array)$v;
             }
+        );
+        $resolver->setNormalizer(
+            'guard',
+            static function (Options $options, $v) {
+                return $v ?? null;
+            }
+        );
+        $resolver->setNormalizer(
+            'configure_properties',
+            static function (Options $options, $v) {
+                $resolver = new OptionsResolver();
 
-            return $resolver;
-        });
+                $resolver->setDefaults($options['properties']);
+
+                if (is_callable($v)) {
+                    $v($resolver);
+                }
+
+                return $resolver;
+            }
+        );
 
         foreach ($this->config['transitions'] as $transition => $config) {
             $config = $resolver->resolve($config);
@@ -149,26 +168,26 @@ class ArrayLoader implements LoaderInterface
     }
 
     /**
-     * @param StateMachineInterface $stateMachine
+     * @param \Finite\StateMachine\StateMachineInterface $stateMachine
      */
-    private function loadCallbacks(StateMachineInterface $stateMachine)
+    private function loadCallbacks(StateMachineInterface $stateMachine): void
     {
         if (!isset($this->config['callbacks'])) {
             return;
         }
 
-        foreach (array('before', 'after') as $position) {
+        foreach (['before', 'after'] as $position) {
             $this->loadCallbacksFor($position, $stateMachine);
         }
     }
 
-    private function loadCallbacksFor($position, $stateMachine)
+    private function loadCallbacksFor($position, $stateMachine): void
     {
         if (!isset($this->config['callbacks'][$position])) {
             return;
         }
 
-        $method = 'add'.ucfirst($position);
+        $method = 'add' . ucfirst($position);
         $resolver = $this->getCallbacksResolver();
         foreach ($this->config['callbacks'][$position] as $specs) {
             $specs = $resolver->resolve($specs);
@@ -178,36 +197,38 @@ class ArrayLoader implements LoaderInterface
                 ->setTo($specs['to'])
                 ->setOn($specs['on'])
                 ->setCallable($specs['do'])
-                ->getCallback();
+                ->getCallback()
+            ;
 
             $this->callbackHandler->$method($callback);
         }
     }
 
-    private function getCallbacksResolver()
+    /** @noinspection PhpUnusedParameterInspection */
+    private function getCallbacksResolver(): OptionsResolver
     {
         $resolver = new OptionsResolver();
 
         $resolver->setDefaults(
-            array(
-                'on' => array(),
-                'from' => array(),
-                'to' => array(),
-            )
+            [
+                'on' => [],
+                'from' => [],
+                'to' => [],
+            ]
         );
 
-        $resolver->setRequired(array('do'));
+        $resolver->setRequired(['do']);
 
-        $resolver->setAllowedTypes('on',   array('string', 'array'));
-        $resolver->setAllowedTypes('from', array('string', 'array'));
-        $resolver->setAllowedTypes('to',   array('string', 'array'));
+        $resolver->setAllowedTypes('on', ['string', 'array']);
+        $resolver->setAllowedTypes('from', ['string', 'array']);
+        $resolver->setAllowedTypes('to', ['string', 'array']);
 
-        $toArrayNormalizer = function (Options $options, $value) {
-            return (array) $value;
+        $toArrayNormalizer = static function (Options $options, $value) {
+            return (array)$value;
         };
-        $resolver->setNormalizer('on',  $toArrayNormalizer);
+        $resolver->setNormalizer('on', $toArrayNormalizer);
         $resolver->setNormalizer('from', $toArrayNormalizer);
-        $resolver->setNormalizer('to',   $toArrayNormalizer);
+        $resolver->setNormalizer('to', $toArrayNormalizer);
 
         return $resolver;
     }

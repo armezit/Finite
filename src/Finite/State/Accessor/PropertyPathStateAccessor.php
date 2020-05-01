@@ -37,32 +37,36 @@ class PropertyPathStateAccessor implements StateAccessorInterface
     /**
      * {@inheritdoc}
      */
-    public function getState($object)
+    public function getState($object): ?string
     {
         try {
-            return $this->propertyAccessor->getValue($object, $this->propertyPath);
+            return $this->propertyAccessor->getValue($object, $this->propertyPath) ?: null;
         } catch (SymfonyNoSuchPropertyException $e) {
-            throw new NoSuchPropertyException(sprintf(
-                'Property path "%s" on object "%s" does not exist.',
-                $this->propertyPath,
-                get_class($object)
-            ), $e->getCode(), $e);
+            throw new NoSuchPropertyException(
+                sprintf(
+                    'Property path "%s" on object "%s" does not exist.',
+                    $this->propertyPath,
+                    get_class($object)
+                ), $e->getCode(), $e
+            );
         }
     }
 
     /**
      * {@inheritdoc}
      */
-    public function setState(&$object, $value)
+    public function setState(&$object, $value): void
     {
         try {
             $this->propertyAccessor->setValue($object, $this->propertyPath, $value);
         } catch (SymfonyNoSuchPropertyException $e) {
-            throw new NoSuchPropertyException(sprintf(
-                'Property path "%s" on object "%s" does not exist.',
-                $this->propertyPath,
-                get_class($object)
-            ), $e->getCode(), $e);
+            throw new NoSuchPropertyException(
+                sprintf(
+                    'Property path "%s" on object "%s" does not exist.',
+                    $this->propertyPath,
+                    get_class($object)
+                ), $e->getCode(), $e
+            );
         }
     }
 }

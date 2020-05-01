@@ -16,19 +16,19 @@ interface TransitionInterface
      *
      * @return array
      */
-    public function getInitialStates();
+    public function getInitialStates(): array;
 
     /**
      * Returns the state resulting of this transition.
      *
      * @return string
      */
-    public function getState();
+    public function getState(): string;
 
     /**
      * Process the transition.
      *
-     * @param StateMachineInterface $stateMachine
+     * @param \Finite\StateMachine\StateMachineInterface $stateMachine
      *
      * @return mixed
      */
@@ -39,12 +39,12 @@ interface TransitionInterface
      *
      * @return string
      */
-    public function getName();
+    public function getName(): string;
 
     /**
      * Returns the closure. If closure execution returns false, transition cannot be applied.
      *
-     * @return callable
+     * @return callable|null
      */
-    public function getGuard();
+    public function getGuard(): ?callable;
 }

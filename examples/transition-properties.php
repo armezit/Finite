@@ -2,79 +2,107 @@
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+use Finite\Event\TransitionEvent;
+use Finite\Exception\TransitionException;
+use Finite\Loader\ArrayLoader;
+use Finite\State\StateInterface;
+use Finite\StatefulInterface;
+use Finite\StateMachine\StateMachine;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+
 // Implement your document class
-class Document implements Finite\StatefulInterface
+class Document implements StatefulInterface
 {
     private $state;
 
-    public function getFiniteState()
+    public function getFiniteState(): string
     {
-        return $this->state;
+        return (string)$this->state;
     }
 
-    public function setFiniteState($state)
+    public function setFiniteState($state): void
     {
         $this->state = $state;
     }
 
-    public function display()
+    public function display(): void
     {
         echo 'Hello, I\'m a document and I\'m currently at the ', $this->state, ' state.', "\n";
     }
 }
 
 // Configure your graph
-$document     = new Document;
-$stateMachine = new Finite\StateMachine\StateMachine($document);
-$loader       = new Finite\Loader\ArrayLoader(array(
-    'class'       => 'Document',
-    'states'      => array(
-        'draft'    => array(
-            'type'       => Finite\State\StateInterface::TYPE_INITIAL,
-            'properties' => array(),
-        ),
-        'proposed' => array(
-            'type'       => Finite\State\StateInterface::TYPE_NORMAL,
-            'properties' => array(),
-        ),
-        'accepted' => array(
-            'type'       => Finite\State\StateInterface::TYPE_FINAL,
-            'properties' => array(),
-        )
-    ),
-    'transitions' => array(
-        'propose' => array('from' => array('draft'), 'to' => 'proposed'),
-        'accept'  => array('from' => array('proposed'), 'to' => 'accepted', 'properties' => ['count' => 0]),
-        'reject'  => array(
-            'from' => array('proposed'),
-            'to' => 'draft',
-            'configure_properties' => function(\Symfony\Component\OptionsResolver\OptionsResolver $optionsResolver) {
-                $optionsResolver->setRequired('count');
-            }
-        ),
-    ),
-    'callbacks' => array(
-        'before' => array(
-            array(
-                'do' => function(Finite\StatefulInterface $document, \Finite\Event\TransitionEvent $e) {
-                    echo sprintf(
-                        "Applying transition \"%s\", count is \"%s\"\n",
-                        $e->getTransition()->getName(),
-                        $e->get('count', 'undefined')
-                    );
-                }
-            )
-        )
-    )
-));
+$document = new Document;
+$stateMachine = new StateMachine($document);
+$loader = new ArrayLoader(
+    [
+        'class' => Document::class,
+        'states' => [
+            'draft' => [
+                'type' => StateInterface::TYPE_INITIAL,
+                'properties' => [],
+            ],
+            'proposed' => [
+                'type' => StateInterface::TYPE_NORMAL,
+                'properties' => [],
+            ],
+            'accepted' => [
+                'type' => StateInterface::TYPE_FINAL,
+                'properties' => [],
+            ],
+        ],
+        'transitions' => [
+            'propose' => [
+                'from' => [
+                    'draft',
+                ],
+                'to' => 'proposed',
+            ],
+            'accept' => [
+                'from' => [
+                    'proposed',
+                ],
+                'to' => 'accepted',
+                'properties' => [
+                    'count' => 0,
+                ],
+            ],
+            'reject' => [
+                'from' => ['proposed'],
+                'to' => 'draft',
+                'configure_properties' => static function (OptionsResolver $optionsResolver) {
+                    $optionsResolver->setRequired('count');
+                },
+            ],
+        ],
+        'callbacks' => [
+            'before' => [
+                [
+                    'do' => function (StatefulInterface $document, TransitionEvent $e) {
+                        echo sprintf(
+                            "Applying transition \"%s\", count is \"%s\"\n",
+                            $e->getTransition()->getName(),
+                            $e->get('count', 'undefined')
+                        );
+                    },
+                ],
+            ],
+        ],
+    ]
+);
 
 $loader->load($stateMachine);
 $stateMachine->initialize();
 
 try {
     // Trying with an undefined property
-    $stateMachine->apply('propose', ['count' => 1]);
-} catch (\Finite\Exception\TransitionException $e) {
+    $stateMachine->apply(
+        'propose',
+        [
+            'count' => 1,
+        ]
+    );
+} catch (TransitionException $e) {
     echo "Property \"propose\" does not exists.\n";
 }
 $stateMachine->apply('propose');
@@ -82,10 +110,16 @@ $stateMachine->apply('propose');
 try {
     // Trying without a mandatory property
     $stateMachine->apply('reject');
-} catch (\Finite\Exception\TransitionException $e) {
+} catch (TransitionException $e) {
     echo "Property \"count\" is mandatory.\n";
 }
-$stateMachine->apply('reject',  ['count' => 2]);
+
+$stateMachine->apply(
+    'reject',
+    [
+        'count' => 2,
+    ]
+);
 
 $stateMachine->apply('propose');
 
