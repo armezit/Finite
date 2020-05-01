@@ -1,5 +1,5 @@
 {
-  "name": "yohang/finite",
+  "name": "armezit/finite",
   "description": "A simple PHP7.2+ Finite State Machine",
   "keywords": [
     "statemachine",
