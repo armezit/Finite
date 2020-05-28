@@ -1,5 +1,5 @@
 {
-  "name": "armezit/finite",
+  "name": "siraaf/finite",
   "description": "A simple PHP7.2+ Finite State Machine",
   "keywords": [
     "statemachine",
